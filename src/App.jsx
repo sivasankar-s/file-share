@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { storage } from './firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import '../public/bg.jpg';
@@ -9,7 +9,17 @@ function App() {
   const [downloadURL, setDownloadURL] = useState('');
   const [shortenedURL, setShortenedURL] = useState('');
   const [copyButtonText, setCopyButtonText] = useState('Copy link');
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Ref to the video element
+  // const videoRef = useRef(null);
+
+  // useEffect(() => {
+  //   // Set the initial playback rate when the component mounts
+  //   if (videoRef.current) {
+  //     videoRef.current.playbackRate = 0.5; // Adjust the playback rate as needed
+  //   }
+  // }, []);
 
   // const storage = getStorage();
 
@@ -20,6 +30,11 @@ function App() {
 
   const handleUpload = async () => {
     if (file) {
+      setIsLoading(true);
+      // Set a faster playback rate while uploading
+      // if (videoRef.current) {
+      //   videoRef.current.playbackRate = 2; // Adjust the faster playback rate as needed
+      // }
       // const storageRef = storage.ref();
       // const fileRef = storageRef.child(file.name);
       let urll='';
@@ -64,6 +79,12 @@ function App() {
                         setShortenedURL(response.data.data.tiny_url);
                         // console.log(shortenedURL)
                         console.log(response.data.data.tiny_url)
+                        setIsLoading(false);
+
+                        // Reset playback rate after uploading
+                        // if (videoRef.current) {
+                        //   videoRef.current.playbackRate = 0.5; // Adjust the initial playback rate as needed
+                        // }
                       });
                     }, 2000);
                   // }
@@ -99,18 +120,41 @@ function App() {
     }
   }
 
+  const handleBack = () => {
+    // Reset all state values to their initial state
+    setFile(null);
+    setShortenedURL('');
+    setOriginalURL('');
+    setCopyButtonText('Copy to Clipboard');
+    setIsLoading(false);
+
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 0.5; // Adjust the initial playback rate as needed
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100"
+    <div className="min-h-screen flex items-center justify-center relative bg-gray-100"
     style={{ background: `url(../galaxy.jpg) no-repeat center fixed`,
     backgroundSize: 'cover' }}
     >
-      <div className="max-w-screen-md w-full p-6 text-center bg-black bg-opacity-80 rounded-lg shadow-md">
+      {/* Background video */}
+      <video
+        autoPlay
+        loop
+        muted
+        className="fixed top-0 left-0 min-w-full min-h-full object-cover"
+      >
+        <source src="bga1.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <div className="max-w-screen-md w-full p-6 text-center bg-black bg-opacity-80 rounded-lg shadow-md z-10">
       {/* bg-clip-text bg-gradient-to-br mb-5 from-indigo-600 to-purple-400 */}
         
         
         {shortenedURL ? (
           <>
-          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-l mb-20 from-violet-800 to-pink-600">Your file is ready to share!</h1>
+          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-l mb-14 from-violet-800 to-pink-600">Your file is ready to share!</h1>
 
           <div className="mt-4">
           <h2 className="text-2xl font-medium text-transparent mb-4 text-white">Copy the link to share your file</h2>
@@ -121,11 +165,17 @@ function App() {
             <input value={shortenedURL} className='text-white rounded border mb-6 text-xl w-3/5 text-center bg-transparent' />
 
             <button
-          className="bg-fuchsia-300 text-black py-2 px-4 rounded ml-4 hover:bg-fuchsia-500"
+          className="bg-fuchsia-300 text-black py-2 px-4 rounded ml-4 mr-5 mb-5 hover:bg-fuchsia-500"
           onClick={copyToClipboard}
         >
           {copyButtonText}
         </button>
+        <button
+              className="bg-slate-300 text-black py-2 px-4 rounded ml-2 hover:bg-slate-400"
+              onClick={handleBack}
+            >
+              Upload another file
+            </button>
             
             {/* <a
               href={shortenedURL}
@@ -151,6 +201,12 @@ function App() {
         >
           Upload
         </button>
+        {isLoading && (
+          <div className="text-white mb-4 flex items-center justify-center">
+            <div className="mr-2 animate-spin">&#9696;</div>
+            <p className='text-white'>Uploading and generating link...</p>
+          </div>
+        )}
         </>
         )
         }
